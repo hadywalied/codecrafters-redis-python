@@ -25,15 +25,15 @@ def handle(connection):
                 resp = resp.encode()
                 connection.sendall(resp)
             elif re.search(Regexes.SET_REGEX, data):
-                key, value = data.split("\r\n")[-2], data.split("\r\n")[-3]
+                key, value = data.split("\r\n")[-4], data.split("\r\n")[-2]
                 STORAGE[key] = value
                 resp = b'+OK\r\n'
-                resp = resp.encode()
+                # resp = resp.encode()
                 connection.sendall(resp)
             elif re.search(Regexes.GET_REGEX, data):
                 key = data.split("\r\n")[-2]
-                resp = f"${len(STORAGE[key])}\r\n{STORAGE[key]}\r\n" if key in STORAGE else '$-1\r\n'
-                resp = f"${len(resp)}\r\n{resp}\r\n"
+                resp = f"${len(STORAGE[key])}\r\n{STORAGE[key]}\r\n" if key in STORAGE.keys() else '$-1\r\n'
+                # resp = f"${len(resp)}\r\n{resp}\r\n"
                 resp = resp.encode()
                 connection.sendall(resp)
 
