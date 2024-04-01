@@ -2,6 +2,7 @@
 import socket
 import threading
 import re
+import time
 
 class Regexes :
     PING_REGEX = re.compile(r'ping\b', re.IGNORECASE)
@@ -12,6 +13,16 @@ class Regexes :
 
 STORAGE = {}
 
+def expire(key, px):
+    if px == -1:
+        return
+    t = time.time()
+    while time.time - t < px:
+        pass
+    if key in STORAGE.keys():
+        del STORAGE[key]
+
+    
 
 def handle(connection):
     with connection:
@@ -25,15 +36,20 @@ def handle(connection):
                 resp = resp.encode()
                 connection.sendall(resp)
             elif re.search(Regexes.SET_REGEX, data):
-                key, value = data.split("\r\n")[-4], data.split("\r\n")[-2]
+                px = -1
+                if 'px' in data:
+                    key, value, px = data.split("\r\n")[-6], data.split("\r\n")[-4], data.split("\r\n")[-2]
+                else:
+                    key, value = data.split("\r\n")[-4], data.split("\r\n")[-2]
                 STORAGE[key] = value
+                _thread = threading.Thread(target=expire, args=[key,px])
+                _thread.start()
                 resp = b'+OK\r\n'
                 # resp = resp.encode()
                 connection.sendall(resp)
             elif re.search(Regexes.GET_REGEX, data):
                 key = data.split("\r\n")[-2]
                 resp = f"${len(STORAGE[key])}\r\n{STORAGE[key]}\r\n" if key in STORAGE.keys() else '$-1\r\n'
-                # resp = f"${len(resp)}\r\n{resp}\r\n"
                 resp = resp.encode()
                 connection.sendall(resp)
 
