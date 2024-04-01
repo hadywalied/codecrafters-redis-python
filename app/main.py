@@ -6,7 +6,12 @@ import re
 class Regexes :
     PING_REGEX = re.compile(r'ping\b', re.IGNORECASE)
     ECHO_REGEX = re.compile(r'echo\b(.*)', re.IGNORECASE)
-    
+    GET_REGEX = re.compile(r'get\b(.*)', re.IGNORECASE)
+    SET_REGEX = re.compile(r'set\b(.*)', re.IGNORECASE)
+
+
+STORAGE = {}
+
 
 def handle(connection):
     with connection:
@@ -16,6 +21,18 @@ def handle(connection):
                 connection.sendall(b"+PONG\r\n")
             elif re.search(Regexes.ECHO_REGEX, data):
                 resp = data.split("\r\n")[-2]
+                resp = f"${len(resp)}\r\n{resp}\r\n"
+                resp = resp.encode()
+                connection.sendall(resp)
+            elif re.search(Regexes.SET_REGEX, data):
+                key, value = data.split("\r\n")[-2], data.split("\r\n")[-3]
+                STORAGE[key] = value
+                resp = b'+OK\r\n'
+                resp = resp.encode()
+                connection.sendall(resp)
+            elif re.search(Regexes.GET_REGEX, data):
+                key = data.split("\r\n")[-2]
+                resp = f"${len(STORAGE[key])}\r\n{STORAGE[key]}\r\n" if key in STORAGE else '$-1\r\n'
                 resp = f"${len(resp)}\r\n{resp}\r\n"
                 resp = resp.encode()
                 connection.sendall(resp)
