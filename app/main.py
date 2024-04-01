@@ -14,10 +14,11 @@ class Regexes :
 STORAGE = {}
 
 def expire(key, px):
+    px = float(px)
     if px == -1:
         return
-    t = time.time()
-    while time.time - t < px:
+    t = time.time() * 1000
+    while (time.time()*1000) - t < px:
         pass
     if key in STORAGE.keys():
         del STORAGE[key]
@@ -38,7 +39,7 @@ def handle(connection):
             elif re.search(Regexes.SET_REGEX, data):
                 px = -1
                 if 'px' in data:
-                    key, value, px = data.split("\r\n")[-6], data.split("\r\n")[-4], data.split("\r\n")[-2]
+                    key, value, px = data.split("\r\n")[-8], data.split("\r\n")[-6], data.split("\r\n")[-2]
                 else:
                     key, value = data.split("\r\n")[-4], data.split("\r\n")[-2]
                 STORAGE[key] = value
